@@ -48,3 +48,8 @@ variable "subscription_id" {
   type        = string
   description = "The Azure Subscription ID to use"
 }
+
+variable "vnet_name" {
+  type        = string
+  description = "The name of the vnet to use"
+}
