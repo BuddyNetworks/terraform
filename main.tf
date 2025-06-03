@@ -1,6 +1,4 @@
-provider "azurerm" {
-  features {}
-}
+data "azurerm_client_config" "current" {}
 
 # Resource group for AKS and core networking
 resource "azurerm_resource_group" "main" {
@@ -32,7 +30,6 @@ resource "azurerm_subnet" "aks_subnet" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.aks_vnet.name
   address_prefixes     = ["10.240.0.0/16"]
-  enforce_private_link_endpoint_network_policies = true
 }
 
 resource "azurerm_subnet" "appgw_subnet" {
@@ -80,7 +77,6 @@ resource "azurerm_application_gateway" "main" {
     port                  = 80
     protocol              = "Http"
     pick_host_name_from_backend_address = false
-    probe_enabled         = false
   }
   http_listener {
     name                           = "default-listener"
@@ -91,9 +87,10 @@ resource "azurerm_application_gateway" "main" {
   request_routing_rule {
     name                       = "default-rule"
     rule_type                  = "Basic"
-    http_listener_name         = "default-listener"
-    backend_address_pool_name  = "default-backend"
-    backend_http_settings_name = "default-http-settings"
+    http_listener_name          = "appGatewayHttpListener"
+    backend_address_pool_name   = "appGatewayBackendPool"
+    backend_http_settings_name  = "appGatewayBackendHttpSettings"
+    priority                   = 100
   }
 }
 
@@ -110,28 +107,25 @@ resource "azurerm_kubernetes_cluster" "aks" {
   dns_prefix          = "${var.cluster_name}-dns"
   kubernetes_version  = var.kubernetes_version
 
-  default_node_pool {
-    name                = "system"
-    node_count          = 2
-    vm_size             = "Standard_DS2_v2"
-    os_disk_size_gb     = 60
-    vnet_subnet_id      = azurerm_subnet.aks_subnet.id
-    enable_auto_scaling = true
-    min_count           = 2
-    max_count           = 5
-    orchestrator_version = var.kubernetes_version
-    node_labels = {
-      "nodepool-type" = "system"
-    }
-    node_taints = ["CriticalAddonsOnly=true:NoSchedule"]
+default_node_pool {
+  name                = "system"
+  node_count          = 1 # optional if min/max used
+  vm_size             = "Standard_DS2_v2"
+  os_disk_size_gb     = 60
+  vnet_subnet_id      = azurerm_subnet.aks_subnet.id
+  orchestrator_version = var.kubernetes_version
+  node_labels = {
+    "nodepool-type" = "system"
   }
+}
 
   identity {
-    type = "UserAssigned"
-    user_assigned_identity_id = azurerm_user_assigned_identity.aks.id
+    type = "SystemAssigned"
   }
-
-  api_server_authorized_ip_ranges = []
+  key_vault_secrets_provider {
+    secret_rotation_enabled   = true
+    secret_rotation_interval  = "2m"
+  }
 
   network_profile {
     network_plugin    = "azure"
@@ -139,26 +133,69 @@ resource "azurerm_kubernetes_cluster" "aks" {
     network_policy    = "azure"
     dns_service_ip    = "10.2.0.10"
     service_cidr      = "10.2.0.0/24"
-    docker_bridge_cidr = "172.17.0.1/16"
     outbound_type     = "userDefinedRouting"
   }
 
-  private_cluster_enabled = true
+  private_cluster_enabled          = true
   role_based_access_control_enabled = true
-  oidc_issuer_enabled = true
+  oidc_issuer_enabled              = true
+}
+
+resource "azurerm_key_vault" "main" {
+  name                        = var.key_vault_name
+  location                    = azurerm_resource_group.main.location
+  resource_group_name         = azurerm_resource_group.main.name
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  sku_name                    = "standard"
+  purge_protection_enabled    = true
+  soft_delete_retention_days  = 7
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Recover",
+      "Backup",
+      "Restore"
+    ]
+  }
+}
+
+resource "azurerm_key_vault_access_policy" "aks" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = azurerm_kubernetes_cluster.aks.identity[0].tenant_id
+  object_id    = azurerm_kubernetes_cluster.aks.identity[0].principal_id
+  secret_permissions = ["Get", "List"]
 }
 
 resource "azurerm_kubernetes_cluster_node_pool" "user" {
   name                  = "user"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
   vm_size               = "Standard_DS2_v2"
-  node_count            = 2
+  node_count            = 1
   os_disk_size_gb       = 60
   vnet_subnet_id        = azurerm_subnet.aks_subnet.id
   orchestrator_version  = var.kubernetes_version
   node_labels = {
     "nodepool-type" = "user"
   }
+  # node_taints can be set here if needed
+}
+
+data "azurerm_container_registry" "acr" {
+  name                = var.acr_name
+  resource_group_name = var.acr_resource_group_name
+}
+
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = data.azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
 }
 
 resource "azurerm_role_assignment" "agic" {

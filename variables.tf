@@ -28,3 +28,23 @@ variable "kubernetes_version" {
   type        = string
   default     = "1.29.2"
 }
+
+variable "acr_name" {
+  type        = string
+  description = "Name of the Azure Container Registry"
+}
+
+variable "acr_resource_group_name" {
+  type        = string
+  description = "Resource group name of the ACR"
+}
+
+variable "key_vault_name" {
+  type        = string
+  description = "Name for the Azure Key Vault"
+}
+
+variable "subscription_id" {
+  type        = string
+  description = "The Azure Subscription ID to use"
+}
