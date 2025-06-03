@@ -2,9 +2,9 @@
 
 This Terraform package provisions a fully private Azure Kubernetes Service (AKS) cluster with:
 
-- A private API server and private networking
-- A system node pool (default) and a user node pool
-- Application Gateway Ingress Controller (AGIC) automatically enabled as an AKS Add-on
+- Private API server and networking
+- System and user node pools
+- Application Gateway Ingress Controller (AGIC) enabled as an AKS Add-on
 - Application Gateway provisioned and integrated
 - DNS zone for ingress and workload domain management
 - Azure Container Registry (ACR) integration for image pulls
@@ -12,7 +12,7 @@ This Terraform package provisions a fully private Azure Kubernetes Service (AKS)
 
 ---
 
-## **Prerequisites**
+## Prerequisites
 
 - [Terraform](https://learn.hashicorp.com/terraform/getting-started/install.html) >= 1.1.0
 - [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
@@ -20,7 +20,7 @@ This Terraform package provisions a fully private Azure Kubernetes Service (AKS)
 
 ---
 
-## **Configuration**
+## Configuration
 
 Set the following variables (in `terraform.tfvars`, CLI, or environment):
 
@@ -32,13 +32,17 @@ Set the following variables (in `terraform.tfvars`, CLI, or environment):
 - `acr_resource_group_name` — Resource group for your ACR
 - `key_vault_name` — Name for your Azure Key Vault
 
-Example `terraform.tfvars`:resource_group_name      = "my-aks-rg"
+Example `terraform.tfvars`:
+```hcl
+resource_group_name      = "my-aks-rg"
 cluster_name             = "my-aks"
 dns_resource_group_name  = "my-dns-rg"
 dns_zone_name            = "mydomain.com"
 acr_name                 = "myacr"
 acr_resource_group_name  = "my-acr-rg"
 key_vault_name           = "my-keyvault"
+```
+
 ---
 
 ## **Deployment**
