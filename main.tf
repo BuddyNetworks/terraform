@@ -175,6 +175,11 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   role_based_access_control_enabled = true
   oidc_issuer_enabled              = true
+
+  # AGIC Addon Profile (correct block)
+  ingress_application_gateway {
+    gateway_id = azurerm_application_gateway.main.id
+  }
 }
 
 # Grant AKS Kubelet Identity ACR Pull permissions

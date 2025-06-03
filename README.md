@@ -4,7 +4,8 @@ This Terraform package provisions a fully private Azure Kubernetes Service (AKS)
 
 - A private API server and private networking
 - A system node pool (default) and a user node pool
-- Application Gateway Ingress Controller (AGIC) ready Application Gateway
+- Application Gateway Ingress Controller (AGIC) automatically enabled as an AKS Add-on
+- Application Gateway provisioned and integrated
 - DNS zone for ingress and workload domain management
 - Azure Container Registry (ACR) integration for image pulls
 - Azure Key Vault integration for Kubernetes secret management
@@ -31,67 +32,43 @@ Set the following variables (in `terraform.tfvars`, CLI, or environment):
 - `acr_resource_group_name` — Resource group for your ACR
 - `key_vault_name` — Name for your Azure Key Vault
 
-Example `terraform.tfvars`:
-```hcl
-resource_group_name      = "my-aks-rg"
+Example `terraform.tfvars`:resource_group_name      = "my-aks-rg"
 cluster_name             = "my-aks"
 dns_resource_group_name  = "my-dns-rg"
 dns_zone_name            = "mydomain.com"
 acr_name                 = "myacr"
 acr_resource_group_name  = "my-acr-rg"
 key_vault_name           = "my-keyvault"
-```
-
 ---
 
 ## **Deployment**
-
-```sh
 terraform init
 terraform apply
-```
-
 ---
 
 ## **Post-Deployment Steps**
 
 ### 1. **Get kubectl Credentials**
-
-```sh
 az aks get-credentials --resource-group <resource_group_name> --name <cluster_name>
-```
-
 ---
 
-### 2. **Install Application Gateway Ingress Controller (AGIC)**
+### 2. **Verify AGIC Add-on**
 
-```sh
-helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
-helm repo update
+The Application Gateway Ingress Controller (AGIC) is automatically enabled as an AKS add-on and integrated with the provisioned Application Gateway. You do **not** need to install AGIC manually via Helm.
 
-helm install ingress-azure application-gateway-kubernetes-ingress/ingress-azure \
-  --set appgw.name=<appgw-name> \
-  --set appgw.resourceGroup=<resource_group_name> \
-  --set appgw.subscriptionId=<subscription_id> \
-  --set appgw.shared=false \
-  --set armAuth.type=systemAssigned
-```
+To verify AGIC is enabled:
+az aks show --resource-group <resource_group_name> --name <cluster_name> --query "addonProfiles.ingressApplicationGateway"
+You should see `enabled: true` and the Application Gateway resource ID.
 
 ---
 
 ### 3. **Install cert-manager**
-
-```sh
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
-```
-
 ---
 
 ### 4. **Create LetsEncrypt ClusterIssuer**
 
 Create a file named `cluster-issuer.yaml`:
-
-```yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -106,25 +83,15 @@ spec:
       - http01:
           ingress:
             class: azure/application-gateway
-```
-
 Apply it:
-
-```sh
 kubectl apply -f cluster-issuer.yaml
-```
-
 ---
 
 ### 5. **Annotate Your Ingress Resources**
-
-```yaml
 metadata:
   annotations:
     kubernetes.io/ingress.class: azure/application-gateway
     cert-manager.io/cluster-issuer: letsencrypt-prod
-```
-
 ---
 
 ### 6. **Create SecretProviderClass for Azure Key Vault (optional)**
