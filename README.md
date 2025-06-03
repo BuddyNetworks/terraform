@@ -120,5 +120,3 @@ See [Azure docs](https://learn.microsoft.com/en-us/azure/aks/csi-secrets-store-d
 - For full documentation, see the Azure AKS, AGIC, and Key Vault CSI documentation.
 
 ---
-
-**Happy Shipping!**

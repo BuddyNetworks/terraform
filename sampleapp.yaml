@@ -1,0 +1,34 @@
+apiVersion: apps/v1  # Deployment API version
+kind: Deployment    # Defines a Deployment resource
+metadata:
+  name: sample-aks-app  # Name of your deployment
+spec:
+  replicas: 2  # Number of pods to run
+  selector:
+    matchLabels:
+      app: sample-aks-app # Labels to identify the pods managed by this deployment
+  template:
+    metadata:
+      labels:
+        app: sample-aks-app # Labels for the pods
+    spec:
+      containers:
+      - name: sample-aks-app-container # Name of the container
+        image: buddynetworks.azurecr.io/architect4hirewww:2270 # Replace with your ACR and image name
+        ports:
+        - containerPort: 4000 # Port your application listens on
+
+--- # Separator for multiple resources in one YAML file
+
+apiVersion: v1 # Service API version
+kind: Service    # Defines a Service resource
+metadata:
+  name: sample-aks-app-service # Name of your service
+spec:
+  selector:
+    app: sample-aks-app # Labels to match the pods exposed by this service
+  ports:
+  - protocol: TCP
+    port: 4000 # Port the service will expose
+    # targetPort: 80 # Port on the pods the service will forward traffic to
+  type: LoadBalancer # Exposes the service externally with a Load Balancer (recommended for web applications)
