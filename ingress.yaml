@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: aspnetapp-dev
+  namespace: apps
   annotations:
     kubernetes.io/ingress.class: azure/application-gateway
     cert-manager.io/cluster-issuer: letsencrypt-production
@@ -10,12 +11,12 @@ spec:
   tls:
     - hosts:
         - "test.architect4hire.com"
-      secretName: tls-secret # <-- Make sure this secret exists or is created by cert-manager
+      secretName: tls-secret
   rules:
     - host: "test.architect4hire.com"
       http:
         paths:
-          - path: /
+          - path: /(.*)
             pathType: Prefix
             backend:
               service:

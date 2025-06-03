@@ -16,7 +16,7 @@ spec:
       - name: sample-aks-app-container # Name of the container
         image: buddynetworks.azurecr.io/architect4hirewww:2270 # Replace with your ACR and image name
         ports:
-        - containerPort: 4000 # Port your application listens on
+        - containerPort: 80 # Port your application listens on
 
 --- # Separator for multiple resources in one YAML file
 
@@ -29,6 +29,6 @@ spec:
     app: sample-aks-app # Labels to match the pods exposed by this service
   ports:
   - protocol: TCP
-    port: 4000 # Port the service will expose
-    # targetPort: 80 # Port on the pods the service will forward traffic to
-  type: LoadBalancer # Exposes the service externally with a Load Balancer (recommended for web applications)
+    port: 80 # Port the service will expose
+    targetPort: 4000 # Port on the pods the service will forward traffic to
+  type: ClusterIP # Exposes the service externally with a Load Balancer (recommended for web applications)
