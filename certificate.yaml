@@ -1,0 +1,14 @@
+# certificate.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tls-secret
+  namespace: apps  # Change if your Ingress is in another namespace
+spec:
+  secretName: tls-secret
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: test.architect4hire.com
+  dnsNames:
+    - test.architect4hire.com

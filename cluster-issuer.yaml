@@ -1,13 +1,14 @@
+# cluster-issuer.yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-prod
+  name: letsencrypt-production
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email:  robert@buddynetworks.net
+    email:  robert@buddynetworks.net  # <-- Replace with your email
     privateKeySecretRef:
-      name: letsencrypt-prod
+      name: letsencrypt-production
     solvers:
       - http01:
           ingress:

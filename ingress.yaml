@@ -4,20 +4,21 @@ metadata:
   name: aspnetapp-dev
   annotations:
     kubernetes.io/ingress.class: azure/application-gateway
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-production
     cert-manager.io/acme-challenge-type: http01
 spec:
   tls:
     - hosts:
-      - "test.architect4hire.com"
+        - "test.architect4hire.com"
+      secretName: tls-secret # <-- Make sure this secret exists or is created by cert-manager
   rules:
-  - host: "test.architect4hire.com"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: sample-aks-app-service
-            port:
-              number: 4000
+    - host: "test.architect4hire.com"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sample-aks-app-service
+                port:
+                  number: 4000
