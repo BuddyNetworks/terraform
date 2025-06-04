@@ -7,6 +7,7 @@ metadata:
     kubernetes.io/ingress.class: azure/application-gateway
     cert-manager.io/cluster-issuer: letsencrypt-production
     cert-manager.io/acme-challenge-type: http01
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
 spec:
   tls:
     - hosts:
@@ -16,10 +17,10 @@ spec:
     - host: "test.architect4hire.com"
       http:
         paths:
-          - path: /(.*)
+          - path: "/"
             pathType: Prefix
             backend:
               service:
                 name: sample-aks-app-service
                 port:
-                  number: 4000
+                  number: 80

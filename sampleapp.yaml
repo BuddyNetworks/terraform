@@ -3,7 +3,7 @@ kind: Deployment    # Defines a Deployment resource
 metadata:
   name: sample-aks-app  # Name of your deployment
 spec:
-  replicas: 2  # Number of pods to run
+  replicas: 1  # Number of pods to run
   selector:
     matchLabels:
       app: sample-aks-app # Labels to identify the pods managed by this deployment
@@ -16,7 +16,7 @@ spec:
       - name: sample-aks-app-container # Name of the container
         image: buddynetworks.azurecr.io/architect4hirewww:2270 # Replace with your ACR and image name
         ports:
-        - containerPort: 80 # Port your application listens on
+        - containerPort: 4000 # Port your application listens on
 
 --- # Separator for multiple resources in one YAML file
 
