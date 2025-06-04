@@ -168,11 +168,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
     outbound_type      = "loadBalancer"
   }
 
-  key_vault_secrets_provider {
-    secret_rotation_enabled  = true
-    secret_rotation_interval = "2m"
-  }
-
   role_based_access_control_enabled = true
   oidc_issuer_enabled              = true
 
@@ -207,6 +202,43 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   orchestrator_version  = azurerm_kubernetes_cluster.aks.kubernetes_version
   node_labels = {
     "role" = "user"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "aks" {
+  subnet_id                 = azurerm_subnet.aks_subnet.id
+  network_security_group_id = azurerm_network_security_group.aks.id
+}
+
+#add nsg rule
+resource "azurerm_network_security_group" "aks" {
+  name                = "aks-nsg"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  security_rule {
+    name                       = "AllowAppGwToAKS"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["80", "443","65200-65535"]
+    source_address_prefix      = "10.1.2.0/24"
+    destination_address_prefix = "10.1.1.0/24"
+  }
+
+  security_rule {
+    name                       = "AllowAllOutbound"
+    priority                   = 110
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "10.1.1.0/24" # AKS subnet
+    destination_address_prefix = "*"
+    description                = "Allow all outbound traffic from AKS subnet"
   }
 }
 
