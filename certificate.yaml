@@ -10,4 +10,4 @@ spec:
     kind: ClusterIssuer
   commonName: test.architect4hire.com
   dnsNames:
-    - "test.architect4hire.com"
+    - test.architect4hire.com
